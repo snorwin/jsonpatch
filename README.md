@@ -45,8 +45,8 @@ func main() {
 
 ## Options
 ### Filter patches using Predicates
-The option `WithPredicate` set a patch `Predicate` which can be used to filter or validate the patch creation.
-For each kind (`add`, `remove` and `replace`) of a patch a dedicated filter function can be configured. The 
+The option `WithPredicate` sets a patch `Predicate` which can be used to filter or validate the patch creation.
+For each kind of patch (`add`, `remove` and `replace`) a dedicated filter function can be configured. The 
 predicate will be checked before a patch is created, or the JSON object is processed further.
 
 #### Example
@@ -140,8 +140,8 @@ func main() {
 
 ### Ignore slice order
 There are two options to ignore the slice order:
-- `IgnoreSliceOrder` will ignore the order of all slices of built-in in types (e.g. `int`, `string`) during the patch creation
-  and will use instead the value itself in order to match and compare the current and modified JSON.
+- `IgnoreSliceOrder` will ignore the order of all slices of built-in types (e.g. `int`, `string`) during the patch creation
+  and will instead use the value itself in order to match and compare the current and modified JSON.
 - `IgnoreSliceOrderWithPattern` allows to specify for which slices the order should be ignored using JSONPointer patterns (e.g. `/jobs`, `/jobs/*`).
   Furthermore, the slice order of structs (and pointer of structs) slices can be ignored by specifying a JSON field which should be used 
   to match the struct values. 

@@ -28,7 +28,7 @@ func WithPrefix(prefix []string) Option {
 	}
 }
 
-// IgnoreSliceOrder will ignore the order of all slices of built-in in types during the walk and will use instead the value
+// IgnoreSliceOrder will ignore the order of all slices of built-in types during the walk and will use instead the value
 // itself in order to compare  the current and modified JSON.
 // NOTE: ignoring order only works if the elements in each slice are unique
 func IgnoreSliceOrder() Option {
