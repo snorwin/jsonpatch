@@ -5,3 +5,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/snorwin/jsonpatch)](https://goreportcard.com/report/github.com/snorwin/jsonpatch)
 [![Coverage Status](https://coveralls.io/repos/github/snorwin/jsonpatch/badge.svg?branch=main)](https://coveralls.io/github/snorwin/jsonpatch?branch=main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+`jsonpatch` is a Go library to create [RFC6902 JSON patches](http://tools.ietf.org/html/rfc6902) directly from arbitrary Go objects and facilitates the implementation of sophisticated custom (e.g. filtered, validated) patch creation.
