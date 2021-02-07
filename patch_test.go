@@ -184,9 +184,28 @@ var _ = Describe("JSONPatch", func() {
 			// add
 			testPatchWithExpected([]int{1, 2, 3}, []int{1, 3}, []int{1, 3, 2}, jsonpatch.IgnoreSliceOrder())
 			testPatchWithExpected([]int{1, 2, 3}, []int{1, 2}, []int{1, 2, 3}, jsonpatch.IgnoreSliceOrder())
+			// no change
+			testPatchWithExpected([]int{3, 2, 1}, []int{1, 2, 3}, []int{1, 2, 3}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]int{1, 2, 3}, []int{3, 2, 1}, []int{3, 2, 1}, jsonpatch.IgnoreSliceOrder())
 			// remove
 			testPatchWithExpected([]int{3, 1}, []int{1, 2, 3}, []int{1, 3}, jsonpatch.IgnoreSliceOrder())
 			testPatchWithExpected([]int{3, 2}, []int{1, 2, 3}, []int{2, 3}, jsonpatch.IgnoreSliceOrder())
+		})
+		It("uint slice ignore order", func() {
+			// add
+			testPatchWithExpected([]uint{1, 2, 3}, []uint{1, 3}, []uint{1, 3, 2}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]uint16{1, 2, 3}, []uint16{1, 2}, []uint16{1, 2, 3}, jsonpatch.IgnoreSliceOrder())
+			// remove
+			testPatchWithExpected([]uint32{3, 1}, []uint32{1, 2, 3}, []uint32{1, 3}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]uint64{3, 2}, []uint64{1, 2, 3}, []uint64{2, 3}, jsonpatch.IgnoreSliceOrder())
+		})
+		It("bool slice ignore order", func() {
+			// add
+			testPatchWithExpected([]bool{true, false}, []bool{false}, []bool{false, true}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]bool{true, false}, []bool{true}, []bool{true, false}, jsonpatch.IgnoreSliceOrder())
+			// remove
+			testPatchWithExpected([]bool{true}, []bool{false, true}, []bool{true}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]bool{true}, []bool{true, false}, []bool{true}, jsonpatch.IgnoreSliceOrder())
 		})
 		It("ptr slice ignore order", func() {
 			// add
@@ -381,13 +400,15 @@ func testPatch(modified, current interface{}) {
 
 	bytes, changes, err := jsonpatch.CreateJSONPatch(modified, current)
 	Ω(err).ShouldNot(HaveOccurred())
-	if string(bytes) == "" {
+	if bytes.Empty() {
 		Ω(currentJSON).Should(MatchJSON(modifiedJSON))
 		Ω(changes).Should(Equal(0))
+		Ω(bytes.String()).Should(Equal(""))
 
 		return
 	}
 
+	Ω(bytes.String()).ShouldNot(Equal(""))
 	jsonPatch, err := jsonpatch2.DecodePatch(bytes)
 	Ω(err).ShouldNot(HaveOccurred())
 	patchedJSON, err := jsonPatch.Apply(currentJSON)
@@ -405,13 +426,15 @@ func testPatchWithExpected(modified, current, expected interface{}, options ...j
 
 	bytes, changes, err := jsonpatch.CreateJSONPatch(modified, current, options...)
 	Ω(err).ShouldNot(HaveOccurred())
-	if string(bytes) == "" {
+	if bytes.Empty() {
 		Ω(currentJSON).Should(MatchJSON(expectedJSON))
 		Ω(changes).Should(Equal(0))
+		Ω(bytes.String()).Should(Equal(""))
 
 		return
 	}
 
+	Ω(bytes.String()).ShouldNot(Equal(""))
 	jsonPatch, err := jsonpatch2.DecodePatch(bytes)
 	Ω(err).ShouldNot(HaveOccurred())
 	patchedJSON, err := jsonPatch.Apply(currentJSON)
