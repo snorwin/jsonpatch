@@ -320,6 +320,53 @@ var _ = Describe("JSONPatch", func() {
 			testPatchWithExpected(F{}, F{B: &B{Str: "don't remove me"}}, F{B: &B{Str: "don't remove me"}}, jsonpatch.WithPredicate(predicate))
 		})
 	})
+	Context("CreateJsonPatch_with_prefix", func() {
+		It("empty prefix", func() {
+			testPatchWithExpected(F{B: &B{Bool: true, Str: "str"}}, F{}, F{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPrefix([]string{""}))
+		})
+		It("pointer prefix", func() {
+			modified := F{A: &A{B: &B{Bool: true, Str: "str"}}}
+			current := F{A: &A{}}
+			expected := F{A: &A{B: &B{Bool: true, Str: "str"}}}
+
+			currentJSON, err := json.Marshal(current)
+			Ω(err).ShouldNot(HaveOccurred())
+			_, err = json.Marshal(modified)
+			Ω(err).ShouldNot(HaveOccurred())
+			expectedJSON, err := json.Marshal(expected)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			bytes, _, err := jsonpatch.CreateJSONPatch(modified.A.B, current.A.B, jsonpatch.WithPrefix(jsonpatch.ParseJSONPointer("/a/ptr")))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(bytes.String()).ShouldNot(Equal(""))
+			jsonPatch, err := jsonpatch2.DecodePatch(bytes)
+			Ω(err).ShouldNot(HaveOccurred())
+			patchedJSON, err := jsonPatch.Apply(currentJSON)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(patchedJSON).Should(MatchJSON(expectedJSON))
+		})
+		It("string prefix", func() {
+			modified := F{B: &B{Bool: true, Str: "str"}}
+			current := F{}
+			expected := F{B: &B{Bool: true, Str: "str"}}
+
+			currentJSON, err := json.Marshal(current)
+			Ω(err).ShouldNot(HaveOccurred())
+			_, err = json.Marshal(modified)
+			Ω(err).ShouldNot(HaveOccurred())
+			expectedJSON, err := json.Marshal(expected)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			bytes, _, err := jsonpatch.CreateJSONPatch(modified.B, current.B, jsonpatch.WithPrefix([]string{"b"}))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(bytes.String()).ShouldNot(Equal(""))
+			jsonPatch, err := jsonpatch2.DecodePatch(bytes)
+			Ω(err).ShouldNot(HaveOccurred())
+			patchedJSON, err := jsonPatch.Apply(currentJSON)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(patchedJSON).Should(MatchJSON(expectedJSON))
+		})
+	})
 	Context("CreateJsonPatch_errors", func() {
 		It("not matching types", func() {
 			_, _, err := jsonpatch.CreateJSONPatch(A{}, B{})
