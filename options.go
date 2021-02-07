@@ -20,7 +20,11 @@ func WithHandler(handler Handler) Option {
 // WithPrefix is used to specify a prefix if only a sub part of JSON structure needs to be patched
 func WithPrefix(prefix []string) Option {
 	return func(w *walker) {
-		w.prefix = append(w.prefix, prefix...)
+		if len(prefix) > 0 && prefix[0] == "" {
+			w.prefix = append(w.prefix, prefix[1:]...)
+		} else {
+			w.prefix = append(w.prefix, prefix...)
+		}
 	}
 }
 
