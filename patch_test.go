@@ -359,7 +359,7 @@ var _ = Describe("JSONPatch", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 100; i++ {
 			It("fuzzy "+strconv.Itoa(i), func() {
 				testPatch(modified, current)
 			})
@@ -371,13 +371,13 @@ var _ = Describe("JSONPatch", func() {
 			modifiedJSON, err := json.Marshal(modified)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			var bytes []byte
+			var bytes jsonpatch.Patch
 			var changes int
 			_ = b.Time("runtime", func() {
 				bytes, changes, err = jsonpatch.CreateJSONPatch(modified, current)
 			})
 			Ω(err).ShouldNot(HaveOccurred())
-			if string(bytes) == "" {
+			if bytes.Empty() {
 				Ω(currentJSON).Should(MatchJSON(modifiedJSON))
 				Ω(changes).Should(Equal(0))
 				return
@@ -388,7 +388,7 @@ var _ = Describe("JSONPatch", func() {
 			patchedJSON, err := jsonPatch.Apply(currentJSON)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(patchedJSON).Should(MatchJSON(modifiedJSON))
-		}, 10)
+		}, 100)
 	})
 })
 
