@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-//  JSONPatch format is specified in RFC 6902
+// JSONPatch format is specified in RFC 6902
 type JSONPatch struct {
 	Operation string      `json:"op"`
 	Path      string      `json:"path"`

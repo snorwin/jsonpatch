@@ -1,6 +1,6 @@
 package jsonpatch
 
-// JSONPatchOption allow to configure the walker instance
+// Option allow to configure the walker instance
 type Option func(r *walker)
 
 // WithPredicate set a patch Predicate for the walker. This can be used to filter or validate the patch creation
