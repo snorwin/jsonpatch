@@ -36,7 +36,7 @@ func main() {
 		},
 	}
 
-	patch, _, _ := jsonpatch.CreateJSONPatch(updated, original,
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original,
 		jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{Pattern: "/*", JSONField: "company"}}),
 		jsonpatch.IgnoreSliceOrder(),
 	)

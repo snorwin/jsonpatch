@@ -22,7 +22,7 @@ func main() {
 		{Position: "Senior Software Engineer", Company: "Github"},
 	}
 
-	patch, _, _ := jsonpatch.CreateJSONPatch(updated, original, jsonpatch.WithPredicate(jsonpatch.Funcs{
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original, jsonpatch.WithPredicate(jsonpatch.Funcs{
 		ReplaceFunc: func(pointer jsonpatch.JSONPointer, value, _ interface{}) bool {
 			// only update volunteering jobs
 			if job, ok := value.(Job); ok {

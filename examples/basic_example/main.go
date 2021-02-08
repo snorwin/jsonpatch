@@ -21,6 +21,6 @@ func main() {
 		Age:  21,
 	}
 
-	patch, _, _ := jsonpatch.CreateJSONPatch(updated, original)
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original)
 	fmt.Println(patch.String())
 }

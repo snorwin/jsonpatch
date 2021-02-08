@@ -35,7 +35,7 @@ func main() {
 		Age:  21,
 	}
 
-	patch, _, _ := jsonpatch.CreateJSONPatch(updated, original)
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original)
 	fmt.Println(patch.String())
 }
 ```
@@ -75,7 +75,7 @@ func main() {
 		{Position: "Senior Software Engineer", Company: "Github"},
 	}
 
-	patch, _, _ := jsonpatch.CreateJSONPatch(updated, original, jsonpatch.WithPredicate(jsonpatch.Funcs{
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original, jsonpatch.WithPredicate(jsonpatch.Funcs{
 		ReplaceFunc: func(pointer jsonpatch.JSONPointer, value, _ interface{}) bool {
 			// only update volunteering jobs
 			if job, ok := value.(Job); ok {
@@ -130,7 +130,7 @@ func main() {
 		{Position: "Software Engineer", Company: "Github"},
 	}
 	
-	patch, _, _ := jsonpatch.CreateJSONPatch(updated, original.Jobs, jsonpatch.WithPrefix(jsonpatch.ParseJSONPointer("/jobs")))
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original.Jobs, jsonpatch.WithPrefix(jsonpatch.ParseJSONPointer("/jobs")))
 	fmt.Println(patch.String())
 }
 ```
@@ -188,7 +188,7 @@ func main() {
 		},
 	}
 
-	patch, _, _ := jsonpatch.CreateJSONPatch(updated, original,
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original,
 		jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{Pattern: "/*", JSONField: "company"}}),
 		jsonpatch.IgnoreSliceOrder(),
 	)
