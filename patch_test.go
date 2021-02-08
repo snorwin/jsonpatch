@@ -3,6 +3,7 @@ package jsonpatch_test
 import (
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -325,6 +326,7 @@ var _ = Describe("JSONPatch", func() {
 			testPatchWithExpected(F{B: &B{Bool: true, Str: "str"}}, F{}, F{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPrefix([]string{""}))
 		})
 		It("pointer prefix", func() {
+			prefix := "/a/ptr"
 			modified := F{A: &A{B: &B{Bool: true, Str: "str"}}}
 			current := F{A: &A{}}
 			expected := F{A: &A{B: &B{Bool: true, Str: "str"}}}
@@ -336,16 +338,18 @@ var _ = Describe("JSONPatch", func() {
 			expectedJSON, err := json.Marshal(expected)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			bytes, _, err := jsonpatch.CreateJSONPatch(modified.A.B, current.A.B, jsonpatch.WithPrefix(jsonpatch.ParseJSONPointer("/a/ptr")))
+			list, err := jsonpatch.CreateJSONPatch(modified.A.B, current.A.B, jsonpatch.WithPrefix(jsonpatch.ParseJSONPointer(prefix)))
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(bytes.String()).ShouldNot(Equal(""))
-			jsonPatch, err := jsonpatch2.DecodePatch(bytes)
+			Ω(list.String()).ShouldNot(Equal(""))
+			Ω(list.List()).Should(ContainElement(WithTransform(func(p jsonpatch.JSONPatch) string { return p.Path }, HavePrefix(prefix))))
+			jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
 			Ω(err).ShouldNot(HaveOccurred())
 			patchedJSON, err := jsonPatch.Apply(currentJSON)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(patchedJSON).Should(MatchJSON(expectedJSON))
 		})
 		It("string prefix", func() {
+			prefix := []string{"b"}
 			modified := F{B: &B{Bool: true, Str: "str"}}
 			current := F{}
 			expected := F{B: &B{Bool: true, Str: "str"}}
@@ -357,10 +361,11 @@ var _ = Describe("JSONPatch", func() {
 			expectedJSON, err := json.Marshal(expected)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			bytes, _, err := jsonpatch.CreateJSONPatch(modified.B, current.B, jsonpatch.WithPrefix([]string{"b"}))
+			list, err := jsonpatch.CreateJSONPatch(modified.B, current.B, jsonpatch.WithPrefix(prefix))
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(bytes.String()).ShouldNot(Equal(""))
-			jsonPatch, err := jsonpatch2.DecodePatch(bytes)
+			Ω(list.String()).ShouldNot(Equal(""))
+			Ω(list.List()).Should(ContainElement(WithTransform(func(p jsonpatch.JSONPatch) string { return p.Path }, HavePrefix("/"+strings.Join(prefix, "/")))))
+			jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
 			Ω(err).ShouldNot(HaveOccurred())
 			patchedJSON, err := jsonPatch.Apply(currentJSON)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -369,25 +374,25 @@ var _ = Describe("JSONPatch", func() {
 	})
 	Context("CreateJsonPatch_errors", func() {
 		It("not matching types", func() {
-			_, _, err := jsonpatch.CreateJSONPatch(A{}, B{})
+			_, err := jsonpatch.CreateJSONPatch(A{}, B{})
 			Ω(err).Should(HaveOccurred())
 		})
 		It("not matching interface types", func() {
-			_, _, err := jsonpatch.CreateJSONPatch(G{1}, G{"str"})
+			_, err := jsonpatch.CreateJSONPatch(G{1}, G{"str"})
 			Ω(err).Should(HaveOccurred())
 		})
 		It("invalid map (map[string]int)", func() {
-			_, _, err := jsonpatch.CreateJSONPatch(G{map[string]int{"key": 2}}, G{map[string]int{"key": 3}})
+			_, err := jsonpatch.CreateJSONPatch(G{map[string]int{"key": 2}}, G{map[string]int{"key": 3}})
 			Ω(err).Should(HaveOccurred())
 		})
 		It("invalid map (map[int]string)", func() {
-			_, _, err := jsonpatch.CreateJSONPatch(G{map[int]string{1: "value"}}, G{map[int]string{2: "value"}})
+			_, err := jsonpatch.CreateJSONPatch(G{map[int]string{1: "value"}}, G{map[int]string{2: "value"}})
 			Ω(err).Should(HaveOccurred())
 		})
 		It("ignore slice order failed (duplicated key)", func() {
-			_, _, err := jsonpatch.CreateJSONPatch([]int{1, 1, 1, 1}, []int{1, 2, 3}, jsonpatch.IgnoreSliceOrder())
+			_, err := jsonpatch.CreateJSONPatch([]int{1, 1, 1, 1}, []int{1, 2, 3}, jsonpatch.IgnoreSliceOrder())
 			Ω(err).Should(HaveOccurred())
-			_, _, err = jsonpatch.CreateJSONPatch([]string{"1", "2", "3"}, []string{"1", "1"}, jsonpatch.IgnoreSliceOrder())
+			_, err = jsonpatch.CreateJSONPatch([]string{"1", "2", "3"}, []string{"1", "1"}, jsonpatch.IgnoreSliceOrder())
 			Ω(err).Should(HaveOccurred())
 		})
 	})
@@ -418,19 +423,19 @@ var _ = Describe("JSONPatch", func() {
 			modifiedJSON, err := json.Marshal(modified)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			var bytes jsonpatch.Patch
-			var changes int
+			var list jsonpatch.JSONPatchList
 			_ = b.Time("runtime", func() {
-				bytes, changes, err = jsonpatch.CreateJSONPatch(modified, current)
+				list, err = jsonpatch.CreateJSONPatch(modified, current)
 			})
 			Ω(err).ShouldNot(HaveOccurred())
-			if bytes.Empty() {
+			if list.Empty() {
 				Ω(currentJSON).Should(MatchJSON(modifiedJSON))
-				Ω(changes).Should(Equal(0))
+				Ω(list.Len()).Should(Equal(0))
+
 				return
 			}
 
-			jsonPatch, err := jsonpatch2.DecodePatch(bytes)
+			jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
 			Ω(err).ShouldNot(HaveOccurred())
 			patchedJSON, err := jsonPatch.Apply(currentJSON)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -445,18 +450,18 @@ func testPatch(modified, current interface{}) {
 	modifiedJSON, err := json.Marshal(modified)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	bytes, changes, err := jsonpatch.CreateJSONPatch(modified, current)
+	list, err := jsonpatch.CreateJSONPatch(modified, current)
 	Ω(err).ShouldNot(HaveOccurred())
-	if bytes.Empty() {
+	if list.Empty() {
 		Ω(currentJSON).Should(MatchJSON(modifiedJSON))
-		Ω(changes).Should(Equal(0))
-		Ω(bytes.String()).Should(Equal(""))
+		Ω(list.Len()).Should(Equal(0))
+		Ω(list.String()).Should(Equal(""))
 
 		return
 	}
 
-	Ω(bytes.String()).ShouldNot(Equal(""))
-	jsonPatch, err := jsonpatch2.DecodePatch(bytes)
+	Ω(list.String()).ShouldNot(Equal(""))
+	jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
 	Ω(err).ShouldNot(HaveOccurred())
 	patchedJSON, err := jsonPatch.Apply(currentJSON)
 	Ω(err).ShouldNot(HaveOccurred())
@@ -471,18 +476,18 @@ func testPatchWithExpected(modified, current, expected interface{}, options ...j
 	expectedJSON, err := json.Marshal(expected)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	bytes, changes, err := jsonpatch.CreateJSONPatch(modified, current, options...)
+	list, err := jsonpatch.CreateJSONPatch(modified, current, options...)
 	Ω(err).ShouldNot(HaveOccurred())
-	if bytes.Empty() {
+	if list.Empty() {
 		Ω(currentJSON).Should(MatchJSON(expectedJSON))
-		Ω(changes).Should(Equal(0))
-		Ω(bytes.String()).Should(Equal(""))
+		Ω(list.Len()).Should(Equal(0))
+		Ω(list.String()).Should(Equal(""))
 
 		return
 	}
 
-	Ω(bytes.String()).ShouldNot(Equal(""))
-	jsonPatch, err := jsonpatch2.DecodePatch(bytes)
+	Ω(list.String()).ShouldNot(Equal(""))
+	jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
 	Ω(err).ShouldNot(HaveOccurred())
 	patchedJSON, err := jsonPatch.Apply(currentJSON)
 	Ω(err).ShouldNot(HaveOccurred())

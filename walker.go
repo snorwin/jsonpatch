@@ -20,7 +20,7 @@ type walker struct {
 	ignoredSlices []IgnorePattern
 }
 
-// walk recursively process the modified and current JSON data structures simultaneously and in every step it compares
+// walk recursively processes the modified and current JSON data structures simultaneously and in every step it compares
 // the value of them with each other
 func (w *walker) walk(modified, current reflect.Value, pointer JSONPointer) error {
 	// the data structures of both JSON objects must be identical
@@ -70,7 +70,7 @@ func (w *walker) walk(modified, current reflect.Value, pointer JSONPointer) erro
 	return nil
 }
 
-// processInterface processes to reflect.Interface values
+// processInterface processes reflect.Interface values
 func (w *walker) processInterface(modified reflect.Value, current reflect.Value, pointer JSONPointer) error {
 	// extract the value form the interface and try to process it further
 	if err := w.walk(reflect.ValueOf(modified.Interface()), reflect.ValueOf(current.Interface()), pointer); err != nil {
@@ -80,7 +80,7 @@ func (w *walker) processInterface(modified reflect.Value, current reflect.Value,
 	return nil
 }
 
-// processMap processes to reflect.Map values
+// processMap processes reflect.Map values
 func (w *walker) processMap(modified reflect.Value, current reflect.Value, pointer JSONPointer) error {
 	// NOTE: currently only map[string]string are supported
 	if len(modified.MapKeys()) > 0 && len(current.MapKeys()) == 0 {
@@ -130,7 +130,7 @@ func (w *walker) processMap(modified reflect.Value, current reflect.Value, point
 	return nil
 }
 
-// processSlice processes to reflect.Slice values
+// processSlice processes reflect.Slice values
 func (w *walker) processSlice(modified reflect.Value, current reflect.Value, pointer JSONPointer) error {
 	if !w.predicate.Replace(pointer, modified.Interface(), current.Interface()) {
 		return nil
@@ -235,7 +235,7 @@ func (w *walker) processSlice(modified reflect.Value, current reflect.Value, poi
 	return nil
 }
 
-// processPtr processes to reflect.Ptr values
+// processPtr processes reflect.Ptr values
 func (w *walker) processPtr(modified reflect.Value, current reflect.Value, pointer JSONPointer) error {
 	if !modified.IsNil() && !current.IsNil() {
 		// the values of the pointers will be processed in a next step
@@ -251,7 +251,7 @@ func (w *walker) processPtr(modified reflect.Value, current reflect.Value, point
 	return nil
 }
 
-// processStruct processes to reflect.Struct values
+// processStruct processes reflect.Struct values
 func (w *walker) processStruct(modified, current reflect.Value, pointer JSONPointer) error {
 	if !w.predicate.Replace(pointer, modified.Interface(), current.Interface()) {
 		return nil

@@ -12,21 +12,45 @@ type JSONPatch struct {
 	Value     interface{} `json:"value,omitempty"`
 }
 
-// Patch is a byte encoded JSON patch
-type Patch []byte
-
-// Empty returns true if the Patch is empty
-func (p Patch) Empty() bool {
-	return len(p) == 0
+// JSONPatchList is a list of JSONPatch
+type JSONPatchList struct {
+	list []JSONPatch
+	raw  []byte
 }
 
-// String converts the Patch to a string
-func (p Patch) String() string {
-	return string(p)
+// Empty returns true if the JSONPatchList is empty
+func (l JSONPatchList) Empty() bool {
+	return l.Len() == 0
+}
+
+// Len returns the length of the JSONPatchList
+func (l JSONPatchList) Len() int {
+	return len(l.list)
+}
+
+// String returns the encoded JSON string of the JSONPatchList
+func (l JSONPatchList) String() string {
+	return string(l.raw)
+}
+
+// Raw returns the raw encoded JSON of the JSONPatchList
+func (l JSONPatchList) Raw() []byte {
+	return l.raw
+}
+
+// List returns a copy of the underlying JSONPatch slice
+func (l JSONPatchList) List() []JSONPatch {
+	ret := make([]JSONPatch, l.Len())
+
+	for i, patch := range l.list {
+		ret[i] = patch
+	}
+
+	return ret
 }
 
 // CreateJSONPatch compares two JSON data structures and creates a JSONPatch according to RFC 6902
-func CreateJSONPatch(modified, current interface{}, options ...Option) (Patch, int, error) {
+func CreateJSONPatch(modified, current interface{}, options ...Option) (JSONPatchList, error) {
 	// create a new walker
 	w := &walker{
 		handler:   &DefaultHandler{},
@@ -40,14 +64,14 @@ func CreateJSONPatch(modified, current interface{}, options ...Option) (Patch, i
 	}
 
 	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(current), w.prefix); err != nil {
-		return []byte{}, 0, err
+		return JSONPatchList{}, err
 	}
 
-	patches := w.patchList
-	if len(patches) == 0 {
-		return []byte{}, 0, nil
+	list := w.patchList
+	if len(list) == 0 {
+		return JSONPatchList{}, nil
 	}
-	p, err := json.Marshal(patches)
+	raw, err := json.Marshal(list)
 
-	return p, len(patches), err
+	return JSONPatchList{list: list, raw: raw}, err
 }
