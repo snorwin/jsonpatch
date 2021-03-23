@@ -55,20 +55,27 @@ type E struct {
 }
 
 type F struct {
+	Str  string `json:"a~bc//2a"`
+	Int  int    `json:"a/b"`
+	Bool bool   `json:"x~~e"`
+}
+
+type G struct {
 	A *A `json:"a"`
 	B *B `json:"b,omitempty"`
 	C C  `json:"c"`
 	D D  `json:"d"`
 	E E  `json:"e"`
-}
-
-type G struct {
-	I interface{} `json:"i"`
+	F F  `json:"f"`
 }
 
 type H struct {
 	Ignored    string `json:"_"`
 	NotIgnored string `json:"notIgnored"`
+}
+
+type I struct {
+	I interface{} `json:"i"`
 }
 
 var _ = Describe("JSONPatch", func() {
@@ -237,18 +244,28 @@ var _ = Describe("JSONPatch", func() {
 			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
 		})
 	})
+	Context("CreateJsonPatch_escape_pointer", func() {
+		It("separator", func() {
+			// add
+			testPatch(F{"value2", 2, false}, F{})
+			// replace
+			testPatch(F{"value1", 1, true}, F{"value2", 2, false})
+			// no change
+			testPatch(F{"value1", 1, true}, F{"value1", 1, true})
+		})
+	})
 	Context("CreateJsonPatch_interface", func() {
 		It("int", func() {
 			// replace
-			testPatch(G{2}, G{3})
+			testPatch(I{2}, I{3})
 			// no change
-			testPatch(G{2}, G{2})
+			testPatch(I{2}, I{2})
 		})
 		It("string", func() {
 			// replace
-			testPatch(G{"value1"}, G{"value2"})
+			testPatch(I{"value1"}, I{"value2"})
 			// no change
-			testPatch(G{"value1"}, G{"value1"})
+			testPatch(I{"value1"}, I{"value1"})
 		})
 	})
 	Context("CreateJsonPatch_ignore", func() {
@@ -302,34 +319,34 @@ var _ = Describe("JSONPatch", func() {
 		})
 		It("predicate_add", func() {
 			// add
-			testPatchWithExpected(F{B: &B{Bool: true, Str: "str"}}, F{}, F{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPredicate(predicate))
-			testPatchWithExpected(F{B: &B{Int: 7, Str: "str"}}, F{}, F{B: &B{Int: 7, Str: "str"}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{B: &B{Bool: true, Str: "str"}}, G{}, G{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{B: &B{Int: 7, Str: "str"}}, G{}, G{B: &B{Int: 7, Str: "str"}}, jsonpatch.WithPredicate(predicate))
 			// don't add
-			testPatchWithExpected(F{B: &B{Bool: false, Str: "str"}, C: C{Map: map[string]string{"key": "value"}}}, F{}, F{C: C{Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
-			testPatchWithExpected(F{B: &B{Int: 0, Str: "str"}, C: C{Map: map[string]string{"key": "value"}}}, F{}, F{C: C{Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{B: &B{Bool: false, Str: "str"}, C: C{Map: map[string]string{"key": "value"}}}, G{}, G{C: C{Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{B: &B{Int: 0, Str: "str"}, C: C{Map: map[string]string{"key": "value"}}}, G{}, G{C: C{Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
 		})
 		It("predicate_replace", func() {
 			// replace
-			testPatchWithExpected(F{C: C{Str: "new", Map: map[string]string{"key": "value"}}}, F{C: C{Str: "old"}}, F{C: C{Str: "new", Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{C: C{Str: "new", Map: map[string]string{"key": "value"}}}, G{C: C{Str: "old"}}, G{C: C{Str: "new", Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
 			// don't replace
-			testPatchWithExpected(F{C: C{Str: "new"}}, F{C: C{Str: "old", Map: map[string]string{"key": "value"}}}, F{C: C{Str: "old", Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{C: C{Str: "new"}}, G{C: C{Str: "old", Map: map[string]string{"key": "value"}}}, G{C: C{Str: "old", Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
 		})
 		It("predicate_remove", func() {
 			// remove
-			testPatchWithExpected(F{}, F{B: &B{Str: "remove me"}}, F{B: nil}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{}, G{B: &B{Str: "remove me"}}, G{B: nil}, jsonpatch.WithPredicate(predicate))
 			// don't remove
-			testPatchWithExpected(F{}, F{B: &B{Str: "don't remove me"}}, F{B: &B{Str: "don't remove me"}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{}, G{B: &B{Str: "don't remove me"}}, G{B: &B{Str: "don't remove me"}}, jsonpatch.WithPredicate(predicate))
 		})
 	})
 	Context("CreateJsonPatch_with_prefix", func() {
 		It("empty prefix", func() {
-			testPatchWithExpected(F{B: &B{Bool: true, Str: "str"}}, F{}, F{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPrefix([]string{""}))
+			testPatchWithExpected(G{B: &B{Bool: true, Str: "str"}}, G{}, G{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPrefix([]string{""}))
 		})
 		It("pointer prefix", func() {
 			prefix := "/a/ptr"
-			modified := F{A: &A{B: &B{Bool: true, Str: "str"}}}
-			current := F{A: &A{}}
-			expected := F{A: &A{B: &B{Bool: true, Str: "str"}}}
+			modified := G{A: &A{B: &B{Bool: true, Str: "str"}}}
+			current := G{A: &A{}}
+			expected := G{A: &A{B: &B{Bool: true, Str: "str"}}}
 
 			currentJSON, err := json.Marshal(current)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -350,9 +367,9 @@ var _ = Describe("JSONPatch", func() {
 		})
 		It("string prefix", func() {
 			prefix := []string{"b"}
-			modified := F{B: &B{Bool: true, Str: "str"}}
-			current := F{}
-			expected := F{B: &B{Bool: true, Str: "str"}}
+			modified := G{B: &B{Bool: true, Str: "str"}}
+			current := G{}
+			expected := G{B: &B{Bool: true, Str: "str"}}
 
 			currentJSON, err := json.Marshal(current)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -378,15 +395,15 @@ var _ = Describe("JSONPatch", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 		It("not matching interface types", func() {
-			_, err := jsonpatch.CreateJSONPatch(G{1}, G{"str"})
+			_, err := jsonpatch.CreateJSONPatch(I{1}, I{"str"})
 			Ω(err).Should(HaveOccurred())
 		})
 		It("invalid map (map[string]int)", func() {
-			_, err := jsonpatch.CreateJSONPatch(G{map[string]int{"key": 2}}, G{map[string]int{"key": 3}})
+			_, err := jsonpatch.CreateJSONPatch(I{map[string]int{"key": 2}}, I{map[string]int{"key": 3}})
 			Ω(err).Should(HaveOccurred())
 		})
 		It("invalid map (map[int]string)", func() {
-			_, err := jsonpatch.CreateJSONPatch(G{map[int]string{1: "value"}}, G{map[int]string{2: "value"}})
+			_, err := jsonpatch.CreateJSONPatch(I{map[int]string{1: "value"}}, I{map[int]string{2: "value"}})
 			Ω(err).Should(HaveOccurred())
 		})
 		It("ignore slice order failed (duplicated key)", func() {
@@ -398,15 +415,15 @@ var _ = Describe("JSONPatch", func() {
 	})
 	Context("CreateJsonPatch_fuzzy", func() {
 		var (
-			current  F
-			modified F
+			current  G
+			modified G
 		)
 		BeforeEach(func() {
-			current = F{}
+			current = G{}
 			err := faker.FakeData(&current)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			modified = F{}
+			modified = G{}
 			err = faker.FakeData(&modified)
 			Ω(err).ShouldNot(HaveOccurred())
 		})

@@ -7,6 +7,7 @@ import (
 const (
 	separator = "/"
 	wildcard  = "*"
+	tilde     = "~"
 )
 
 // JSONPointer identifies a specific value within a JSON object specified in RFC 6901
@@ -24,6 +25,8 @@ func (p JSONPointer) String() string {
 
 // Add adds an element to the JSONPointer
 func (p JSONPointer) Add(elem string) JSONPointer {
+	elem = strings.ReplaceAll(elem, tilde, "~0")
+	elem = strings.ReplaceAll(elem, separator, "~1")
 	return append(p, elem)
 }
 
