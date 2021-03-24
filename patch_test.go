@@ -36,8 +36,12 @@ type B struct {
 }
 
 type C struct {
-	Str string            `json:"str,omitempty"`
-	Map map[string]string `json:"map"`
+	Str       string            `json:"str,omitempty"`
+	StrMap    map[string]string `json:"strmap"`
+	IntMap    map[string]int    `json:"intmap"`
+	BoolMap   map[string]bool   `json:"boolmap"`
+	StructMap map[string]B      `json:"structmap"`
+	PtrMap    map[string]*B     `json:"ptrmap"`
 }
 
 type D struct {
@@ -154,17 +158,28 @@ var _ = Describe("JSONPatch", func() {
 		})
 	})
 	Context("CreateJsonPatch_map", func() {
-		It("map", func() {
+		It("string map", func() {
 			// add
-			testPatch(C{Map: map[string]string{"key1": "value1"}}, C{})
+			testPatch(C{StrMap: map[string]string{"key1": "value1"}}, C{})
 			// remove
-			testPatch(C{Map: map[string]string{}}, C{Map: map[string]string{"key1": "value1"}})
+			testPatch(C{StrMap: map[string]string{}}, C{StrMap: map[string]string{"key1": "value1"}})
 			// replace
-			testPatch(C{Map: map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"}}, C{Map: map[string]string{}})
-			testPatch(C{Map: map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"}}, C{Map: map[string]string{"key1": "value1"}})
-			testPatch(C{Map: map[string]string{"key1": "value1"}}, C{Map: map[string]string{"key1": "value2"}})
+			testPatch(C{StrMap: map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"}}, C{StrMap: map[string]string{}})
+			testPatch(C{StrMap: map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"}}, C{StrMap: map[string]string{"key1": "value1"}})
+			testPatch(C{StrMap: map[string]string{"key1": "value1"}}, C{StrMap: map[string]string{"key1": "value2"}})
 			// no change
-			testPatch(C{Map: map[string]string{"key1": "value1", "key2": "value2"}}, C{Map: map[string]string{"key1": "value1", "key2": "value2"}})
+			testPatch(C{StrMap: map[string]string{"key1": "value1", "key2": "value2"}}, C{StrMap: map[string]string{"key1": "value1", "key2": "value2"}})
+		})
+		It("struct map", func() {
+			// add
+			testPatch(C{StructMap: map[string]B{"key1": {Str: "value1"}}}, C{})
+			testPatch(C{StructMap: map[string]B{"key1": {Str: "value1"}, "key2": {Str: "value2"}}}, C{StructMap: map[string]B{"key1": {Str: "value1"}}})
+			// remove
+			testPatch(C{StructMap: map[string]B{"key1": {Str: "value1"}}}, C{StructMap: map[string]B{"key1": {Str: "value1"}, "key2": {Str: "value2"}}})
+			// replace
+			testPatch(C{StructMap: map[string]B{"key1": {Str: "value1", Bool: true}}}, C{StructMap: map[string]B{"key1": {Str: "old"}}})
+			// no change
+			testPatch(C{StructMap: map[string]B{"key1": {Str: "value1", Bool: true}, "key2": {Str: "value2"}}}, C{StructMap: map[string]B{"key1": {Str: "value1", Bool: true}, "key2": {Str: "value2"}}})
 		})
 	})
 	Context("CreateJsonPatch_slice", func() {
@@ -234,14 +249,14 @@ var _ = Describe("JSONPatch", func() {
 			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "key2"}, {Str: "key3"}, {Str: "key4"}}}, D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "key3"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
 			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key3"}, {Str: "key2"}}}, D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "key2"}, {Str: "key3"}, {Str: "key4"}}}, D{StructSliceWithKey: []C{{Str: "key2"}, {Str: "key3"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
 			// replace
-			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key", Map: map[string]string{"key": "value1"}}}}, D{StructSliceWithKey: []C{{Str: "key", Map: map[string]string{"key": "value2"}}}}, D{StructSliceWithKey: []C{{Str: "key", Map: map[string]string{"key": "value1"}}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
-			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key", Map: map[string]string{"key1": "value"}}}}, D{StructSliceWithKey: []C{{Str: "key", Map: map[string]string{"key1": "value"}}}}, D{StructSliceWithKey: []C{{Str: "key", Map: map[string]string{"key1": "value"}}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
+			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key", StrMap: map[string]string{"key": "value1"}}}}, D{StructSliceWithKey: []C{{Str: "key", StrMap: map[string]string{"key": "value2"}}}}, D{StructSliceWithKey: []C{{Str: "key", StrMap: map[string]string{"key": "value1"}}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
+			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key", StrMap: map[string]string{"key1": "value"}}}}, D{StructSliceWithKey: []C{{Str: "key", StrMap: map[string]string{"key1": "value"}}}}, D{StructSliceWithKey: []C{{Str: "key", StrMap: map[string]string{"key1": "value"}}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
 			// mixed
 			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "new"}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "key2"}, {Str: "key3"}, {Str: "key4"}}}, D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "key3"}, {Str: "new"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
 			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key3"}, {Str: "key2"}, {Str: "new"}}}, D{StructSliceWithKey: []C{{Str: "key1"}, {Str: "key2"}, {Str: "key3"}, {Str: "key4"}}}, D{StructSliceWithKey: []C{{Str: "key2"}, {Str: "key3"}, {Str: "new"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
 			// no change
-			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key3"}, {Str: "key2", Map: map[string]string{"key": "value"}}}}, D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
-			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", Map: map[string]string{"key": "value"}}, {Str: "key3"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
+			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key3"}, {Str: "key2", StrMap: map[string]string{"key": "value"}}}}, D{StructSliceWithKey: []C{{Str: "key2", StrMap: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", StrMap: map[string]string{"key": "value"}}, {Str: "key3"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
+			testPatchWithExpected(D{StructSliceWithKey: []C{{Str: "key2", StrMap: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", StrMap: map[string]string{"key": "value"}}, {Str: "key3"}}}, D{StructSliceWithKey: []C{{Str: "key2", StrMap: map[string]string{"key": "value"}}, {Str: "key3"}}}, jsonpatch.IgnoreSliceOrderWithPattern([]jsonpatch.IgnorePattern{{"/structsWithKey", "str"}}))
 		})
 	})
 	Context("CreateJsonPatch_escape_pointer", func() {
@@ -302,7 +317,7 @@ var _ = Describe("JSONPatch", func() {
 				ReplaceFunc: func(path jsonpatch.JSONPointer, modified, current interface{}) bool {
 					if modifiedC, ok := modified.(C); ok {
 						if currentC, ok := current.(C); ok {
-							return len(modifiedC.Map) > len(currentC.Map)
+							return len(modifiedC.StrMap) > len(currentC.StrMap)
 						}
 					}
 
@@ -322,14 +337,14 @@ var _ = Describe("JSONPatch", func() {
 			testPatchWithExpected(G{B: &B{Bool: true, Str: "str"}}, G{}, G{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPredicate(predicate))
 			testPatchWithExpected(G{B: &B{Int: 7, Str: "str"}}, G{}, G{B: &B{Int: 7, Str: "str"}}, jsonpatch.WithPredicate(predicate))
 			// don't add
-			testPatchWithExpected(G{B: &B{Bool: false, Str: "str"}, C: C{Map: map[string]string{"key": "value"}}}, G{}, G{C: C{Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
-			testPatchWithExpected(G{B: &B{Int: 0, Str: "str"}, C: C{Map: map[string]string{"key": "value"}}}, G{}, G{C: C{Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{B: &B{Bool: false, Str: "str"}, C: C{StrMap: map[string]string{"key": "value"}}}, G{}, G{C: C{StrMap: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{B: &B{Int: 0, Str: "str"}, C: C{StrMap: map[string]string{"key": "value"}}}, G{}, G{C: C{StrMap: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
 		})
 		It("predicate_replace", func() {
 			// replace
-			testPatchWithExpected(G{C: C{Str: "new", Map: map[string]string{"key": "value"}}}, G{C: C{Str: "old"}}, G{C: C{Str: "new", Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{C: C{Str: "new", StrMap: map[string]string{"key": "value"}}}, G{C: C{Str: "old"}}, G{C: C{Str: "new", StrMap: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
 			// don't replace
-			testPatchWithExpected(G{C: C{Str: "new"}}, G{C: C{Str: "old", Map: map[string]string{"key": "value"}}}, G{C: C{Str: "old", Map: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
+			testPatchWithExpected(G{C: C{Str: "new"}}, G{C: C{Str: "old", StrMap: map[string]string{"key": "value"}}}, G{C: C{Str: "old", StrMap: map[string]string{"key": "value"}}}, jsonpatch.WithPredicate(predicate))
 		})
 		It("predicate_remove", func() {
 			// remove
@@ -398,10 +413,6 @@ var _ = Describe("JSONPatch", func() {
 			_, err := jsonpatch.CreateJSONPatch(I{1}, I{"str"})
 			Ω(err).Should(HaveOccurred())
 		})
-		It("invalid map (map[string]int)", func() {
-			_, err := jsonpatch.CreateJSONPatch(I{map[string]int{"key": 2}}, I{map[string]int{"key": 3}})
-			Ω(err).Should(HaveOccurred())
-		})
 		It("invalid map (map[int]string)", func() {
 			_, err := jsonpatch.CreateJSONPatch(I{map[int]string{1: "value"}}, I{map[int]string{2: "value"}})
 			Ω(err).Should(HaveOccurred())
@@ -428,7 +439,7 @@ var _ = Describe("JSONPatch", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 1000; i++ {
 			It("fuzzy "+strconv.Itoa(i), func() {
 				testPatch(modified, current)
 			})

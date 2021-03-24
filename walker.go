@@ -82,7 +82,7 @@ func (w *walker) processInterface(modified reflect.Value, current reflect.Value,
 
 // processMap processes reflect.Map values
 func (w *walker) processMap(modified reflect.Value, current reflect.Value, pointer JSONPointer) error {
-	// NOTE: currently only map[string]string are supported
+	// NOTE: currently only map[string]interface{} are supported
 	if len(modified.MapKeys()) > 0 && len(current.MapKeys()) == 0 {
 		w.add(pointer, modified.Interface())
 	} else {
@@ -90,39 +90,30 @@ func (w *walker) processMap(modified reflect.Value, current reflect.Value, point
 		for it.Next() {
 			key := it.Key()
 			if key.Kind() != reflect.String {
-				return fmt.Errorf("only map[string]string are supported but key was: %s", key.Kind())
+				return fmt.Errorf("only strings are supported as map keys but was: %s at: %s", key.Kind(), pointer)
 			}
 
 			val1 := it.Value()
 			val2 := current.MapIndex(key)
-			switch val2.Kind() {
-			case reflect.Invalid:
-				if val1.Kind() != reflect.String {
-					return fmt.Errorf("only map[string]string are supported but value was: %s", val1.Kind())
-				}
-				w.add(pointer.Add(key.String()), val1.String())
-			case reflect.String:
+			if val2.Kind() == reflect.Invalid {
+				w.add(pointer.Add(key.String()), val1.Interface())
+			} else {
 				if err := w.walk(val1, val2, pointer.Add(key.String())); err != nil {
 					return err
 				}
-			default:
-				return fmt.Errorf("only map[string]string are supported but value was: %s", val2.Kind())
 			}
 		}
 		it = current.MapRange()
 		for it.Next() {
 			key := it.Key()
 			if key.Kind() != reflect.String {
-				return fmt.Errorf("only map[string]string are supported but key was: %s", key.Kind())
+				return fmt.Errorf("only strings are supported as map keys but was: %s at: %s", key.Kind(), pointer)
 			}
 
 			val1 := modified.MapIndex(key)
 			val2 := it.Value()
 			if val1.Kind() == reflect.Invalid {
-				if val2.Kind() != reflect.String {
-					return fmt.Errorf("only map[string]string are supported but value was: %s", val1.Kind())
-				}
-				w.remove(pointer.Add(key.String()), val2.String())
+				w.remove(pointer.Add(key.String()), val2.Interface())
 			}
 		}
 	}
