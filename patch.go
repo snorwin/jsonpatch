@@ -75,3 +75,50 @@ func CreateJSONPatch(modified, current interface{}, options ...Option) (JSONPatc
 
 	return JSONPatchList{list: list, raw: raw}, err
 }
+
+// CreateThreeWayJSONPatch compares three JSON data structures and creates a three-way JSONPatch according to RFC 6902
+func CreateThreeWayJSONPatch(modified, current, original interface{}, options ...Option) (JSONPatchList, error) {
+	var list []JSONPatch
+
+	// create a new walker
+	w := &walker{
+		handler:   &DefaultHandler{},
+		predicate: Funcs{},
+		prefix:    []string{""},
+	}
+
+	// apply options to the walker
+	for _, apply := range options {
+		apply(w)
+	}
+
+	// compare modified with current and only keep addition and changes
+	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(current), w.prefix); err != nil {
+		return JSONPatchList{}, err
+	}
+	for _, patch := range w.patchList {
+		if patch.Operation != "remove" {
+			list = append(list, patch)
+		}
+	}
+
+	// reset walker
+	w.patchList = []JSONPatch{}
+
+	// compare modified with original and only keep deletions
+	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(original), w.prefix); err != nil {
+		return JSONPatchList{}, err
+	}
+	for _, patch := range w.patchList {
+		if patch.Operation == "remove" {
+			list = append(list, patch)
+		}
+	}
+
+	if len(list) == 0 {
+		return JSONPatchList{}, nil
+	}
+	raw, err := json.Marshal(list)
+
+	return JSONPatchList{list: list, raw: raw}, err
+}

@@ -439,7 +439,7 @@ var _ = Describe("JSONPatch", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 100; i++ {
 			It("fuzzy "+strconv.Itoa(i), func() {
 				testPatch(modified, current)
 			})
@@ -470,6 +470,41 @@ var _ = Describe("JSONPatch", func() {
 			Ω(patchedJSON).Should(MatchJSON(modifiedJSON))
 		}, 100)
 	})
+	Context("CreateThreeWayJSONPatch_simple", func() {
+		It("should replace and add", func() {
+			// add
+			testThreeWayPatchWithExpected(D{IntSlice: []int{1, 2, 3, 4}}, D{IntSlice: []int{1, 2, 3}}, D{IntSlice: []int{1, 2, 3}}, D{IntSlice: []int{1, 2, 3, 4}})
+			// replace
+			testThreeWayPatchWithExpected(B{Str: "new"}, B{Str: "old"}, B{Str: "old"}, B{Str: "new"})
+		})
+		It("should remove only if exists in original", func() {
+			// not remove
+			testThreeWayPatchWithExpected(D{IntSlice: []int{1, 2, 3}}, D{IntSlice: []int{1, 2, 3}, StringSlice: []string{"str1"}}, D{IntSlice: []int{1, 2, 3}}, D{IntSlice: []int{1, 2, 3}, StringSlice: []string{"str1"}})
+			// remove
+			testThreeWayPatchWithExpected(D{IntSlice: []int{1, 2, 3}, StringSlice: []string{}}, D{IntSlice: []int{1, 2, 3}, StringSlice: []string{"str1"}}, D{IntSlice: []int{1, 2, 3}, StringSlice: []string{"str1"}}, D{IntSlice: []int{1, 2, 3}, StringSlice: []string{}})
+		})
+	})
+	Context("CreateThreeWayJSONPatch_fuzzy", func() {
+		var (
+			current  G
+			modified G
+		)
+		BeforeEach(func() {
+			current = G{}
+			err := faker.FakeData(&current)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			modified = G{}
+			err = faker.FakeData(&modified)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		for i := 0; i < 100; i++ {
+			It("fuzzy "+strconv.Itoa(i), func() {
+				testThreeWayPatch(modified, current)
+			})
+		}
+	})
 })
 
 func testPatch(modified, current interface{}) {
@@ -496,6 +531,30 @@ func testPatch(modified, current interface{}) {
 	Ω(patchedJSON).Should(MatchJSON(modifiedJSON))
 }
 
+func testThreeWayPatch(modified, current interface{}) {
+	currentJSON, err := json.Marshal(current)
+	Ω(err).ShouldNot(HaveOccurred())
+	modifiedJSON, err := json.Marshal(modified)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	list, err := jsonpatch.CreateThreeWayJSONPatch(modified, current, current)
+	Ω(err).ShouldNot(HaveOccurred())
+	if list.Empty() {
+		Ω(currentJSON).Should(MatchJSON(modifiedJSON))
+		Ω(list.Len()).Should(Equal(0))
+		Ω(list.String()).Should(Equal(""))
+
+		return
+	}
+
+	Ω(list.String()).ShouldNot(Equal(""))
+	jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
+	Ω(err).ShouldNot(HaveOccurred())
+	patchedJSON, err := jsonPatch.Apply(currentJSON)
+	Ω(err).ShouldNot(HaveOccurred())
+	Ω(patchedJSON).Should(MatchJSON(modifiedJSON))
+}
+
 func testPatchWithExpected(modified, current, expected interface{}, options ...jsonpatch.Option) {
 	currentJSON, err := json.Marshal(current)
 	Ω(err).ShouldNot(HaveOccurred())
@@ -505,6 +564,32 @@ func testPatchWithExpected(modified, current, expected interface{}, options ...j
 	Ω(err).ShouldNot(HaveOccurred())
 
 	list, err := jsonpatch.CreateJSONPatch(modified, current, options...)
+	Ω(err).ShouldNot(HaveOccurred())
+	if list.Empty() {
+		Ω(currentJSON).Should(MatchJSON(expectedJSON))
+		Ω(list.Len()).Should(Equal(0))
+		Ω(list.String()).Should(Equal(""))
+
+		return
+	}
+
+	Ω(list.String()).ShouldNot(Equal(""))
+	jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
+	Ω(err).ShouldNot(HaveOccurred())
+	patchedJSON, err := jsonPatch.Apply(currentJSON)
+	Ω(err).ShouldNot(HaveOccurred())
+	Ω(patchedJSON).Should(MatchJSON(expectedJSON))
+}
+
+func testThreeWayPatchWithExpected(modified, current, original, expected interface{}) {
+	currentJSON, err := json.Marshal(current)
+	Ω(err).ShouldNot(HaveOccurred())
+	_, err = json.Marshal(modified)
+	Ω(err).ShouldNot(HaveOccurred())
+	expectedJSON, err := json.Marshal(expected)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	list, err := jsonpatch.CreateThreeWayJSONPatch(modified, current, original)
 	Ω(err).ShouldNot(HaveOccurred())
 	if list.Empty() {
 		Ω(currentJSON).Should(MatchJSON(expectedJSON))
