@@ -6,5 +6,5 @@ require (
 	github.com/bxcodec/faker/v3 v3.6.0
 	github.com/evanphx/json-patch v0.5.2
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.14.0
+	github.com/onsi/gomega v1.15.0
 )
