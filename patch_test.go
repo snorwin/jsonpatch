@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bxcodec/faker/v3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/bxcodec/faker/v3"
 	jsonpatch2 "github.com/evanphx/json-patch"
 
 	"github.com/snorwin/jsonpatch"
@@ -33,6 +33,7 @@ type B struct {
 	Uint32  uint32  `json:"uint32"`
 	Uint64  uint64  `json:"uint64"`
 	UintPtr uintptr `json:"ptr" faker:"-"`
+	Float64 float64 `json:"float64"`
 }
 
 type C struct {
