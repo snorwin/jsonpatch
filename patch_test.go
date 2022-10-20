@@ -33,6 +33,8 @@ type B struct {
 	Uint32  uint32  `json:"uint32"`
 	Uint64  uint64  `json:"uint64"`
 	UintPtr uintptr `json:"ptr" faker:"-"`
+	Float32   float32   `json:"float32"`
+	Float64   float64   `json:"float64"`
 }
 
 type C struct {
