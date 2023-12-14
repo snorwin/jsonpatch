@@ -60,6 +60,10 @@ func (w *walker) walk(modified, current reflect.Value, pointer JSONPointer) erro
 		if modified.Bool() != current.Bool() {
 			w.replace(pointer, modified.Bool(), current.Bool())
 		}
+	case reflect.Float32, reflect.Float64:
+		if modified.Float() != current.Float() {
+			w.replace(pointer, modified.Float(), current.Float())
+		}
 	case reflect.Invalid:
 		// undefined interfaces are ignored for now
 		return nil
