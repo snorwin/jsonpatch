@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,19 +21,20 @@ type A struct {
 }
 
 type B struct {
-	Str     string  `json:"str,omitempty"`
-	Bool    bool    `json:"bool"`
-	Int     int     `json:"int"`
-	Int8    int8    `json:"int8"`
-	Int16   int16   `json:"int16"`
-	Int32   int32   `json:"int32"`
-	Int64   int64   `json:"int64"`
-	Uint    uint    `json:"uint"`
-	Uint8   uint8   `json:"uint8"`
-	Uint16  uint16  `json:"uint16"`
-	Uint32  uint32  `json:"uint32"`
-	Uint64  uint64  `json:"uint64"`
-	UintPtr uintptr `json:"ptr" faker:"-"`
+	Str     string    `json:"str,omitempty"`
+	Bool    bool      `json:"bool"`
+	Int     int       `json:"int"`
+	Int8    int8      `json:"int8"`
+	Int16   int16     `json:"int16"`
+	Int32   int32     `json:"int32"`
+	Int64   int64     `json:"int64"`
+	Uint    uint      `json:"uint"`
+	Uint8   uint8     `json:"uint8"`
+	Uint16  uint16    `json:"uint16"`
+	Uint32  uint32    `json:"uint32"`
+	Uint64  uint64    `json:"uint64"`
+	UintPtr uintptr   `json:"ptr" faker:"-"`
+	Time    time.Time `json:"time"`
 }
 
 type C struct {
@@ -155,6 +157,17 @@ var _ = Describe("JSONPatch", func() {
 			testPatch(B{Uint32: 22, Uint64: 22}, B{Uint: 1, Uint8: 1, Uint32: 1, Uint64: 1})
 			// no change
 			testPatch(B{Uint: 1, Uint8: 1, Uint16: 1, Uint32: 1, Uint64: 1}, B{Uint: 1, Uint8: 1, Uint16: 1, Uint32: 1, Uint64: 1})
+		})
+		It("time", func() {
+			now := time.Now()
+			// add
+			testPatch(B{Time: now}, B{})
+			// remove
+			testPatch(B{}, B{Time: now})
+			// replace
+			testPatch(B{Time: now}, B{Time: now.Add(1 * time.Hour)})
+			// no change
+			testPatch(B{Time: now}, B{Time: now})
 		})
 	})
 	Context("CreateJsonPatch_map", func() {
