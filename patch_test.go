@@ -9,8 +9,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	jsonpatch2 "github.com/evanphx/json-patch/v5"
 	"github.com/go-faker/faker/v4"
-	jsonpatch2 "github.com/evanphx/json-patch"
 
 	"github.com/snorwin/jsonpatch"
 )
@@ -34,6 +34,8 @@ type B struct {
 	Uint32  uint32    `json:"uint32"`
 	Uint64  uint64    `json:"uint64"`
 	UintPtr uintptr   `json:"ptr" faker:"-"`
+	Float32 float32   `json:"float32"`
+	Float64 float64   `json:"float64"`
 	Time    time.Time `json:"time"`
 }
 
@@ -47,12 +49,13 @@ type C struct {
 }
 
 type D struct {
-	PtrSlice           []*B     `json:"ptr"`
-	StructSlice        []C      `json:"structs"`
-	StringSlice        []string `json:"strs"`
-	IntSlice           []int    `json:"ints"`
-	StructSliceWithKey []C      `json:"structsWithKey"`
-	PtrSliceWithKey    []*B     `json:"ptrWithKey"`
+	PtrSlice           []*B      `json:"ptr"`
+	StructSlice        []C       `json:"structs"`
+	StringSlice        []string  `json:"strs"`
+	IntSlice           []int     `json:"ints"`
+	FloatSlice         []float64 `json:"floats"`
+	StructSliceWithKey []C       `json:"structsWithKey"`
+	PtrSliceWithKey    []*B      `json:"ptrWithKey"`
 }
 
 type E struct {
@@ -158,6 +161,19 @@ var _ = Describe("JSONPatch", func() {
 			// no change
 			testPatch(B{Uint: 1, Uint8: 1, Uint16: 1, Uint32: 1, Uint64: 1}, B{Uint: 1, Uint8: 1, Uint16: 1, Uint32: 1, Uint64: 1})
 		})
+		It("float", func() {
+			// add
+			testPatch(B{Float32: 1.1, Float64: 2.2}, B{})
+			// remove
+			testPatch(B{}, B{Float32: 1.1, Float64: 2.2})
+			// replace
+			testPatch(B{Float32: 1.1, Float64: 2.2}, B{Float32: 1.12, Float64: 2.22})
+			// mixed
+			testPatch(B{Float32: 1.1}, B{Float64: 2.2})
+			testPatch(B{Float32: 1.0, Float64: 2.0}, B{Float64: 2.2})
+			// no change
+			testPatch(B{Float32: 1.1, Float64: 2.2}, B{Float32: 1.1, Float64: 2.2})
+		})
 		It("time", func() {
 			now := time.Now()
 			// add
@@ -226,6 +242,17 @@ var _ = Describe("JSONPatch", func() {
 			// remove
 			testPatchWithExpected([]int{3, 1}, []int{1, 2, 3}, []int{1, 3}, jsonpatch.IgnoreSliceOrder())
 			testPatchWithExpected([]int{3, 2}, []int{1, 2, 3}, []int{2, 3}, jsonpatch.IgnoreSliceOrder())
+		})
+		It("float slice ignore order", func() {
+			// add
+			testPatchWithExpected([]float32{1.1, 2.1, 3.1}, []float32{1.1, 3.1}, []float32{1.1, 3.1, 2.1}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]float64{1.1, 2.1, 3.1}, []float64{1.1, 2.1}, []float64{1.1, 2.1, 3.1}, jsonpatch.IgnoreSliceOrder())
+			// no change
+			testPatchWithExpected([]float32{3.1, 2.1, 1.1}, []float32{1.1, 2.1, 3.1}, []float32{1.1, 2.1, 3.1}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]float64{1.1, 2.1, 3.1}, []float64{3.1, 2.1, 1.1}, []float64{3.1, 2.1, 1.1}, jsonpatch.IgnoreSliceOrder())
+			// remove
+			testPatchWithExpected([]float32{3.1, 1.1}, []float32{1.1, 2.1, 3.1}, []float32{1.1, 3.1}, jsonpatch.IgnoreSliceOrder())
+			testPatchWithExpected([]float64{3.1, 2.1}, []float64{1.1, 2.1, 3.1}, []float64{2.1, 3.1}, jsonpatch.IgnoreSliceOrder())
 		})
 		It("uint slice ignore order", func() {
 			// add
@@ -315,19 +342,17 @@ var _ = Describe("JSONPatch", func() {
 		})
 	})
 	Context("CreateJsonPatch_with_predicates", func() {
-		var (
-			predicate jsonpatch.Predicate
-		)
+		var predicate jsonpatch.Predicate
 		BeforeEach(func() {
 			predicate = jsonpatch.Funcs{
-				AddFunc: func(path jsonpatch.JSONPointer, modified interface{}) bool {
+				AddFunc: func(_ jsonpatch.JSONPointer, modified interface{}) bool {
 					if b, ok := modified.(B); ok {
 						return b.Bool || b.Int > 2
 					}
 
 					return true
 				},
-				ReplaceFunc: func(path jsonpatch.JSONPointer, modified, current interface{}) bool {
+				ReplaceFunc: func(_ jsonpatch.JSONPointer, modified, current interface{}) bool {
 					if modifiedC, ok := modified.(C); ok {
 						if currentC, ok := current.(C); ok {
 							return len(modifiedC.StrMap) > len(currentC.StrMap)
@@ -336,7 +361,7 @@ var _ = Describe("JSONPatch", func() {
 
 					return true
 				},
-				RemoveFunc: func(path jsonpatch.JSONPointer, current interface{}) bool {
+				RemoveFunc: func(_ jsonpatch.JSONPointer, current interface{}) bool {
 					if b, ok := current.(B); ok {
 						return b.Str != "don't remove me"
 					}

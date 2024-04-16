@@ -49,6 +49,14 @@ func (w *walker) walk(modified, current reflect.Value, pointer JSONPointer) erro
 		if modified.Uint() != current.Uint() {
 			w.replace(pointer, modified.Uint(), current.Uint())
 		}
+	case reflect.Float32:
+		if modified.Float() != current.Float() {
+			w.replace(pointer, float32(modified.Float()), float32(current.Float()))
+		}
+	case reflect.Float64:
+		if modified.Float() != current.Float() {
+			w.replace(pointer, modified.Float(), current.Float())
+		}
 	case reflect.Bool:
 		if modified.Bool() != current.Bool() {
 			w.replace(pointer, modified.Bool(), current.Bool())
@@ -309,6 +317,10 @@ func extractIgnoreSliceOrderMatchValue(value reflect.Value, fieldName string) st
 		return strconv.FormatInt(value.Int(), 10)
 	case reflect.Uint, reflect.Uintptr, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return strconv.FormatUint(value.Uint(), 10)
+	case reflect.Float32:
+		return strconv.FormatFloat(value.Float(), 'f', -1, 32)
+	case reflect.Float64:
+		return strconv.FormatFloat(value.Float(), 'f', -1, 64)
 	case reflect.Bool:
 		return strconv.FormatBool(value.Bool())
 	}
