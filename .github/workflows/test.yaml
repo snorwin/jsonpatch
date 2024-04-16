@@ -1,33 +1,45 @@
-name: Test
+name: test
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: Build
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: ^1.15
-
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Test
-        run: go test ./... -coverprofile cover.out -timeout 30m
+          go-version: ^1.22
+          cache: false
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.54
+  test:
+    name: go test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ^1.22
+          cache: false
+      - name: go test
+        run: go test -coverprofile cover.out -timeout 30m
         env:
           CGO_ENABLED: 0
           GO111MODULE: on
           GOOS: linux
           GOARCH: amd64
-
-      - name: Send coverage
+      - name: send coverage
         uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: cover.out
