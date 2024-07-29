@@ -6,7 +6,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/go-faker/faker/v4 v4.4.2
 	github.com/onsi/ginkgo/v2 v2.19.0
-	github.com/onsi/gomega v1.33.1
+	github.com/onsi/gomega v1.34.0
 )
 
 require (
