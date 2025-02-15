@@ -63,8 +63,3 @@ func (p JSONPointer) AddTags(tags []string) JSONPointer {
 func (p JSONPointer) ShouldOmite() bool {
 	return slices.Contains(p.tags, "omitempty")
 }
-
-// Prefix return a path as list to be used as prefix
-func (p JSONPointer) Prefix() []string {
-	return p.path
-}
