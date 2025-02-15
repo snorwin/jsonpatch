@@ -1,7 +1,6 @@
 package jsonpatch
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -13,8 +12,6 @@ import (
 const (
 	jsonTag = "json"
 )
-
-var ErrShouldDelete = errors.New("must delete")
 
 type walker struct {
 	predicate     Predicate
