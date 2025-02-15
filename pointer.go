@@ -11,9 +11,9 @@ type JSONPointer struct {
 	tags []string
 }
 
-func NewJSONPointerWithPrefix(prefix []string) JSONPointer {
+func NewJSONPointerWithPrefix() JSONPointer {
 	return JSONPointer{
-		path: prefix,
+		path: []string{},
 		tags: []string{},
 	}
 }

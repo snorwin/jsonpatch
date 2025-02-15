@@ -310,7 +310,8 @@ func (w *walker) processStruct(modified, current reflect.Value, pointer JSONPoin
 	for j := 0; j < modified.NumField(); j++ {
 		tags := strings.Split(modified.Type().Field(j).Tag.Get(jsonTag), ",")
 		tag := tags[0]
-		if tag == "" || tag == "_" || !modified.Field(j).CanInterface() {
+
+		if tag == "" || tag == "_" || !modified.Field(j).CanInterface() || !w.checkPrefix(pointer, tag) {
 			// struct fields without a JSON tag set or unexported fields are ignored
 			continue
 		}
@@ -400,6 +401,20 @@ func (w *walker) remove(pointer JSONPointer, current interface{}) bool {
 		return false
 	}
 	w.patchList = append(w.patchList, w.handler.Remove(pointer, current)...)
+
+	return true
+}
+
+func (w *walker) checkPrefix(pointer JSONPointer, tag string) bool {
+	if len(w.prefix) > len(pointer.Add(tag).path) {
+		return w.prefix[0] == tag
+	}
+
+	for i := range w.prefix {
+		if w.prefix[i] != pointer.Add(tag).path[i] {
+			return false
+		}
+	}
 
 	return true
 }
