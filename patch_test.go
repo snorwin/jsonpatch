@@ -3,7 +3,6 @@ package jsonpatch_test
 import (
 	"encoding/json"
 	"strconv"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -393,7 +392,7 @@ var _ = Describe("JSONPatch", func() {
 	})
 	Context("CreateJsonPatch_with_prefix", func() {
 		It("empty prefix", func() {
-			testPatchWithExpected(G{B: &B{Bool: true, Str: "str"}}, G{}, G{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPrefix([]string{""}))
+			testPatchWithExpected(G{B: &B{Bool: true, Str: "str"}}, G{}, G{B: &B{Bool: true, Str: "str"}}, jsonpatch.WithPrefix(""))
 		})
 		It("pointer prefix", func() {
 			prefix := "/a/ptr"
@@ -408,7 +407,7 @@ var _ = Describe("JSONPatch", func() {
 			expectedJSON, err := json.Marshal(expected)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			list, err := jsonpatch.CreateJSONPatch(modified.A.B, current.A.B, jsonpatch.WithPrefix(jsonpatch.ParseJSONPointer(prefix)))
+			list, err := jsonpatch.CreateJSONPatch(modified.A.B, current.A.B, jsonpatch.WithPrefix(prefix))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(list.String()).ShouldNot(Equal(""))
 			Ω(list.List()).Should(ContainElement(WithTransform(func(p jsonpatch.JSONPatch) string { return p.Path }, HavePrefix(prefix))))
@@ -419,7 +418,7 @@ var _ = Describe("JSONPatch", func() {
 			Ω(patchedJSON).Should(MatchJSON(expectedJSON))
 		})
 		It("string prefix", func() {
-			prefix := []string{"b"}
+			prefix := "b"
 			modified := G{B: &B{Bool: true, Str: "str"}}
 			current := G{}
 			expected := G{B: &B{Bool: true, Str: "str"}}
@@ -434,7 +433,7 @@ var _ = Describe("JSONPatch", func() {
 			list, err := jsonpatch.CreateJSONPatch(modified.B, current.B, jsonpatch.WithPrefix(prefix))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(list.String()).ShouldNot(Equal(""))
-			Ω(list.List()).Should(ContainElement(WithTransform(func(p jsonpatch.JSONPatch) string { return p.Path }, HavePrefix("/"+strings.Join(prefix, "/")))))
+			Ω(list.List()).Should(ContainElement(WithTransform(func(p jsonpatch.JSONPatch) string { return p.Path }, HavePrefix("/"+prefix+"/"))))
 			jsonPatch, err := jsonpatch2.DecodePatch(list.Raw())
 			Ω(err).ShouldNot(HaveOccurred())
 			patchedJSON, err := jsonPatch.Apply(currentJSON)
