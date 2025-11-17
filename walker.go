@@ -43,23 +43,43 @@ func (w *walker) walk(modified, current reflect.Value, pointer JSONPointer) erro
 		return w.processString(modified, current, pointer)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if modified.Int() != current.Int() {
-			w.replace(pointer, modified.Int(), current.Int())
+			if pointer.ShouldOmite() && modified.IsZero() {
+				w.remove(pointer, current.Int())
+			} else {
+				w.replace(pointer, modified.Int(), current.Int())
+			}
 		}
 	case reflect.Uint, reflect.Uintptr, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if modified.Uint() != current.Uint() {
-			w.replace(pointer, modified.Uint(), current.Uint())
+			if pointer.ShouldOmite() && modified.IsZero() {
+				w.remove(pointer, current.Uint())
+			} else {
+				w.replace(pointer, modified.Uint(), current.Uint())
+			}
 		}
 	case reflect.Float32:
 		if modified.Float() != current.Float() {
-			w.replace(pointer, float32(modified.Float()), float32(current.Float()))
+			if pointer.ShouldOmite() && modified.IsZero() {
+				w.remove(pointer, float32(current.Float()))
+			} else {
+				w.replace(pointer, float32(modified.Float()), float32(current.Float()))
+			}
 		}
 	case reflect.Float64:
 		if modified.Float() != current.Float() {
-			w.replace(pointer, modified.Float(), current.Float())
+			if pointer.ShouldOmite() && modified.IsZero() {
+				w.remove(pointer, current.Float())
+			} else {
+				w.replace(pointer, modified.Float(), current.Float())
+			}
 		}
 	case reflect.Bool:
 		if modified.Bool() != current.Bool() {
-			w.replace(pointer, modified.Bool(), current.Bool())
+			if pointer.ShouldOmite() && modified.IsZero() {
+				w.remove(pointer, current.Bool())
+			} else {
+				w.replace(pointer, modified.Bool(), current.Bool())
+			}
 		}
 	case reflect.Invalid:
 		// undefined interfaces are ignored for now
@@ -84,7 +104,7 @@ func (w *walker) processInterface(modified reflect.Value, current reflect.Value,
 // processString processes reflect.String values
 func (w *walker) processString(modified reflect.Value, current reflect.Value, pointer JSONPointer) error {
 	if modified.String() != current.String() {
-		if modified.String() == "" {
+		if pointer.ShouldOmite() && modified.String() == "" {
 			w.remove(pointer, current.String())
 		} else if current.String() == "" {
 			w.add(pointer, modified.String())
@@ -260,7 +280,16 @@ func (w *walker) processPtr(modified reflect.Value, current reflect.Value, point
 
 // processStruct processes reflect.Struct values
 func (w *walker) processStruct(modified, current reflect.Value, pointer JSONPointer) error {
+	if !w.predicate.Remove(pointer, current) {
+		return nil
+	}
+
 	if !w.predicate.Replace(pointer, modified.Interface(), current.Interface()) {
+		return nil
+	}
+
+	if pointer.ShouldOmite() && modified.IsZero() {
+		w.remove(pointer, current.Interface())
 		return nil
 	}
 
@@ -279,13 +308,16 @@ func (w *walker) processStruct(modified, current reflect.Value, pointer JSONPoin
 
 	// process all struct fields, the order of the fields of the  modified and current JSON object is identical because their types match
 	for j := 0; j < modified.NumField(); j++ {
-		tag := strings.Split(modified.Type().Field(j).Tag.Get(jsonTag), ",")[0]
-		if tag == "" || tag == "_" || !modified.Field(j).CanInterface() {
+		tags := strings.Split(modified.Type().Field(j).Tag.Get(jsonTag), ",")
+		tag := tags[0]
+
+		if tag == "" || tag == "_" || !modified.Field(j).CanInterface() || !w.checkPrefix(pointer, tag) {
 			// struct fields without a JSON tag set or unexported fields are ignored
 			continue
 		}
+
 		// process the child's value of the modified and current JSON in a next step
-		if err := w.walk(modified.Field(j), current.Field(j), pointer.Add(tag)); err != nil {
+		if err := w.walk(modified.Field(j), current.Field(j), pointer.Add(tag).AddTags(tags)); err != nil {
 			return err
 		}
 	}
@@ -369,6 +401,20 @@ func (w *walker) remove(pointer JSONPointer, current interface{}) bool {
 		return false
 	}
 	w.patchList = append(w.patchList, w.handler.Remove(pointer, current)...)
+
+	return true
+}
+
+func (w *walker) checkPrefix(pointer JSONPointer, tag string) bool {
+	if len(w.prefix) > len(pointer.Add(tag).path) {
+		return w.prefix[0] == tag
+	}
+
+	for i := range w.prefix {
+		if w.prefix[i] != pointer.Add(tag).path[i] {
+			return false
+		}
+	}
 
 	return true
 }
