@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/go-faker/faker/v4 v4.7.0
-	github.com/onsi/ginkgo/v2 v2.27.3
+	github.com/onsi/ginkgo/v2 v2.27.5
 	github.com/onsi/gomega v1.39.0
 )
 
