@@ -31,7 +31,7 @@ func (w *walker) walk(modified, current reflect.Value, pointer JSONPointer) erro
 	switch modified.Kind() {
 	case reflect.Struct:
 		return w.processStruct(modified, current, pointer)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return w.processPtr(modified, current, pointer)
 	case reflect.Slice:
 		return w.processSlice(modified, current, pointer)
@@ -306,7 +306,7 @@ func extractIgnoreSliceOrderMatchValue(value reflect.Value, fieldName string) st
 	switch value.Kind() {
 	case reflect.Struct:
 		return extractIgnoreSliceOrderMatchValue(value.FieldByName(fieldName), "")
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if !value.IsNil() {
 			return extractIgnoreSliceOrderMatchValue(value.Elem(), fieldName)
 		}
@@ -336,7 +336,7 @@ func jsonFieldNameToFieldName(t reflect.Type, jsonFieldName string) string {
 				return t.Field(i).Name
 			}
 		}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return jsonFieldNameToFieldName(t.Elem(), jsonFieldName)
 	}
 
