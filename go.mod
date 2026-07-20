@@ -1,10 +1,10 @@
 module github.com/snorwin/jsonpatch
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/evanphx/json-patch/v5 v5.9.11
-	github.com/go-faker/faker/v4 v4.9.0
+	github.com/go-faker/faker/v4 v4.10.0
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
 )
