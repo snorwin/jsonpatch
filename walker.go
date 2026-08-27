@@ -264,7 +264,8 @@ func (w *walker) processStruct(modified, current reflect.Value, pointer JSONPoin
 		return nil
 	}
 
-	if modified.Type().PkgPath() == "time" && modified.Type().Name() == "Time" {
+	var modifiedType = modified.Type()
+	if modifiedType.PkgPath() == "time" && modifiedType.Name() == "Time" {
 		m, err := toTimeStrValue(modified)
 		if err != nil {
 			return err
@@ -279,13 +280,27 @@ func (w *walker) processStruct(modified, current reflect.Value, pointer JSONPoin
 
 	// process all struct fields, the order of the fields of the  modified and current JSON object is identical because their types match
 	for j := 0; j < modified.NumField(); j++ {
-		tag := strings.Split(modified.Type().Field(j).Tag.Get(jsonTag), ",")[0]
-		if tag == "" || tag == "_" || !modified.Field(j).CanInterface() {
+		var modifiedField = modified.Field(j)
+		var modifiedFieldType = modifiedType.Field(j)
+
+		tag := strings.Split(modifiedFieldType.Tag.Get(jsonTag), ",")[0]
+
+		// allow the tag to be missing if the field is anonymous
+		haveTagOrIsAnonymous := tag != "" || modifiedFieldType.Anonymous
+
+		if !haveTagOrIsAnonymous || tag == "_" || !modifiedFieldType.IsExported() {
 			// struct fields without a JSON tag set or unexported fields are ignored
 			continue
 		}
+
+		var p2 = pointer
+		// update the pointer unless the tag is empty
+		if tag != "" {
+			p2 = pointer.Add(tag)
+		}
+
 		// process the child's value of the modified and current JSON in a next step
-		if err := w.walk(modified.Field(j), current.Field(j), pointer.Add(tag)); err != nil {
+		if err := w.walk(modifiedField, current.Field(j), p2); err != nil {
 			return err
 		}
 	}
