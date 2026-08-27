@@ -50,7 +50,7 @@ func CreateJSONPatch(modified, current interface{}, options ...Option) (JSONPatc
 	w := &walker{
 		handler:   &DefaultHandler{},
 		predicate: Funcs{},
-		prefix:    []string{""},
+		prefix:    []string{},
 	}
 
 	// apply options to the walker
@@ -58,7 +58,7 @@ func CreateJSONPatch(modified, current interface{}, options ...Option) (JSONPatc
 		apply(w)
 	}
 
-	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(current), w.prefix); err != nil {
+	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(current), NewJSONPointerWithPrefix()); err != nil {
 		return JSONPatchList{}, err
 	}
 
@@ -79,7 +79,7 @@ func CreateThreeWayJSONPatch(modified, current, original interface{}, options ..
 	w := &walker{
 		handler:   &DefaultHandler{},
 		predicate: Funcs{},
-		prefix:    []string{""},
+		prefix:    []string{},
 	}
 
 	// apply options to the walker
@@ -88,7 +88,7 @@ func CreateThreeWayJSONPatch(modified, current, original interface{}, options ..
 	}
 
 	// compare modified with current and only keep addition and changes
-	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(current), w.prefix); err != nil {
+	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(current), NewJSONPointerWithPrefix()); err != nil {
 		return JSONPatchList{}, err
 	}
 	for _, patch := range w.patchList {
@@ -101,7 +101,7 @@ func CreateThreeWayJSONPatch(modified, current, original interface{}, options ..
 	w.patchList = []JSONPatch{}
 
 	// compare modified with original and only keep deletions
-	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(original), w.prefix); err != nil {
+	if err := w.walk(reflect.ValueOf(modified), reflect.ValueOf(original), NewJSONPointerWithPrefix()); err != nil {
 		return JSONPatchList{}, err
 	}
 	for _, patch := range w.patchList {

@@ -29,6 +29,6 @@ func main() {
 		{Position: "Software Engineer", Company: "Github"},
 	}
 
-	patch, _ := jsonpatch.CreateJSONPatch(updated, original.Jobs, jsonpatch.WithPrefix(jsonpatch.ParseJSONPointer("/jobs")))
+	patch, _ := jsonpatch.CreateJSONPatch(updated, original.Jobs, jsonpatch.WithPrefix("/jobs"))
 	fmt.Println(patch.String())
 }
