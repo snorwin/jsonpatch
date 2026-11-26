@@ -87,6 +87,13 @@ type I struct {
 	I interface{} `json:"i"`
 }
 
+// we have to create an alias for 'any' so that we can embedd it in to J as an exported type
+type EmbeddedAlias any
+
+type J struct {
+	EmbeddedAlias `json:"embedded"`
+}
+
 var _ = Describe("JSONPatch", func() {
 	Context("CreateJsonPatch_pointer_values", func() {
 		It("pointer", func() {
@@ -339,6 +346,43 @@ var _ = Describe("JSONPatch", func() {
 		It("ignored", func() {
 			// no change
 			testPatchWithExpected(H{Ignored: "new", NotIgnored: "new"}, H{Ignored: "old", NotIgnored: "old"}, H{Ignored: "old", NotIgnored: "new"})
+		})
+	})
+	Context("CreateJsonPatch_embedded", func() {
+		It("primitive", func() {
+			// add
+			testPatch(J{"2"}, J{""})
+			// replace
+			testPatch(J{"2"}, J{"1"})
+			// remove // removing an embedded base will remove the whole JSON object
+			testPatchWithExpected(J{""}, J{"2"}, struct{}{})
+			// no change
+			testPatch(J{}, J{})
+			testPatch(J{""}, J{""})
+			testPatch(J{"1"}, J{"1"})
+		})
+		It("slice", func() {
+			// add
+			testPatch(J{[]string{"1"}}, J{[]string{}})
+			// replace
+			testPatch(J{[]string{"2"}}, J{[]string{"1"}})
+			// remove
+			testPatch(J{[]string{}}, J{[]string{"2"}})
+			// no change
+			testPatch(J{[]string{}}, J{[]string{}})
+			testPatch(J{[]string{""}}, J{[]string{""}})
+			testPatch(J{[]string{"1"}}, J{[]string{"1"}})
+		})
+		It("struct", func() {
+			// add
+			testPatch(J{C{Str: "1"}}, J{C{}})
+			// replace
+			testPatch(J{C{Str: "2"}}, J{C{Str: "1"}})
+			// remove
+			testPatch(J{C{}}, J{C{Str: "1"}})
+			// no change
+			testPatch(J{C{}}, J{C{}})
+			testPatch(J{C{Str: "2"}}, J{C{Str: "2"}})
 		})
 	})
 	Context("CreateJsonPatch_with_predicates", func() {
