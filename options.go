@@ -1,5 +1,9 @@
 package jsonpatch
 
+import (
+	"strings"
+)
+
 // Option allow to configure the walker instance
 type Option func(r *walker)
 
@@ -18,12 +22,14 @@ func WithHandler(handler Handler) Option {
 }
 
 // WithPrefix is used to specify a prefix if only a sub part of JSON structure needs to be patched
-func WithPrefix(prefix []string) Option {
+func WithPrefix(prefix string) Option {
+	sPrefix := strings.Split(prefix, separator)
+
 	return func(w *walker) {
-		if len(prefix) > 0 && prefix[0] == "" {
-			w.prefix = append(w.prefix, prefix[1:]...)
+		if len(sPrefix) > 0 && sPrefix[0] == "" {
+			w.prefix = append(w.prefix, sPrefix[1:]...)
 		} else {
-			w.prefix = append(w.prefix, prefix...)
+			w.prefix = append(w.prefix, sPrefix...)
 		}
 	}
 }
